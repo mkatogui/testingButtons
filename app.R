@@ -3,18 +3,12 @@ library(shinyjs)
 library(shinyBS)
 
 ui <- fluidPage(
-  useShinyjs(),  # Initialize shinyjs
+  useShinyjs(),
   titlePanel("Model Publishing App"),
   sidebarLayout(
     sidebarPanel(
       checkboxInput("user_approved", "User Approved", value = FALSE),
-      actionButton("publish_btn", "Publish Model"),
-      bsTooltip(
-        id = "publish_btn",
-        title = "You need an approved user to publish this model.",
-        placement = "right",
-        trigger = "hover"
-      )
+      uiOutput("publish_btn_ui")
     ),
     mainPanel(
       verbatimTextOutput("publish_status")
@@ -23,24 +17,31 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  # Enable or disable the button based on checkbox state
-  observe({
+  # Dynamically render the button and tooltip based on checkbox state
+  output$publish_btn_ui <- renderUI({
     if (isTRUE(input$user_approved)) {
-      enable("publish_btn")
-      removeTooltip(session, id = "publish_btn")  # Remove tooltip when enabled
+      tagList(
+        actionButton("publish_btn", "Publish Model"),
+        bsTooltip(
+          id = "publish_btn",
+          title = "You are going to publish this model.",
+          placement = "right",
+          trigger = "hover"
+        )
+      )
     } else {
-      disable("publish_btn")
-      addTooltip(
-        session = session,
-        id = "publish_btn",
-        title = "You need an approved user to publish this model.",
-        placement = "right",
-        trigger = "hover"
-      )  # Add tooltip when disabled
+      tagList(
+        actionButton("publish_btn", "Publish Model", disabled = TRUE),
+        bsTooltip(
+          id = "publish_btn",
+          title = "You need an approved user to publish this model.",
+          placement = "right",
+          trigger = "hover"
+        )
+      )
     }
   })
-  
-  # Show a message when the button is clicked
+
   output$publish_status <- renderText({
     req(input$publish_btn)
     if (isTRUE(input$user_approved)) {
